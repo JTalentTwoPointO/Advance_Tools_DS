@@ -10,7 +10,8 @@ class Scraper:
         self.db = db.DB()
 
     def get(self, url):
-        self.soup = BeautifulSoup(req.get(url).text, 'html.parser')
+        search = f"https://www.reddit.com/search/?q={url}"
+        self.soup = BeautifulSoup(req.get(search).text, 'html.parser')
 
         if self.soup is None:
             print('No soup')
