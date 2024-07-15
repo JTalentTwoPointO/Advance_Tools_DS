@@ -5,28 +5,36 @@ import db
 
 
 class Scraper:
-    def __init__(self):
+    def __init__(self, database):
+        print("Initializing Scraper")
         self.soup = None
-        self.db = db.DB()
+        self.db = database
 
     def get(self, url):
-        search = f"https://www.reddit.com/search/?q={url}"
-        self.soup = BeautifulSoup(req.get(search).text, 'html.parser')
+        try:
+            print(f"Fetching URL: {url}")
+            search = f"https://www.reddit.com/search/?q={url}"
+            response = req.get(search)
+            response.raise_for_status()  # Raises an error for bad response
+            self.soup = BeautifulSoup(req.get(search).text, 'html.parser')
 
-        if self.soup is None:
-            print('No soup')
-            return []
+            if self.soup is None:
+                print('No soup')
+                return []
 
-        for post in self.soup.find_all('faceplate-tracker',
-                                       {'data-faceplate-tracking-context': True, "noun": "post", "action": "view"}):
-            context = post.get('data-faceplate-tracking-context')
+            for post in self.soup.find_all('faceplate-tracker',
+                                           {'data-faceplate-tracking-context': True, "noun": "post", "action": "view"}):
+                context = post.get('data-faceplate-tracking-context')
 
-            if context and "post" in context:
+                if context and "post" in context:
 
-                j = json.loads(context)['post']
+                    j = json.loads(context)['post']
 
-                if self.db.search_id(j['id']):
-                    continue
+                    if self.db.search_id(j['id']):
+                        continue
 
-                self.db.insert(j)
-                yield j
+                    print(f"Inserting post: {j['title']}")  # Debug statement
+                    self.db.insert(j)
+                    yield j
+        except req.RequestException as e:
+            print(f"Error fetching url: {e}")

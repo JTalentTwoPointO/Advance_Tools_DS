@@ -1,12 +1,13 @@
 import tkinter as tk
 import webbrowser
-
 import scrape
 import db
-# ui for a main window with a text box and button for a link
+
 class MainWindow(tk.Tk):
-    def __init__(self):
-        self.scraper = scrape.Scraper()
+    def __init__(self, database):
+        print("Initializing UI")
+        self.scraper = scrape.Scraper(database)
+        self.database = database
 
         tk.Tk.__init__(self)
         self.title('Reddit Web Scraper')
@@ -28,7 +29,6 @@ class MainWindow(tk.Tk):
         self.list.pack(fill=tk.BOTH, expand=True)
         self.list.bind('<<ListboxSelect>>', self.on_list_select)
         self.post_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.textField.insert(tk.END, 'programming')
 
         self.info_likes = tk.Frame(self)
         self.likes_label = tk.Label(self.info_likes, text="Likes:")
@@ -53,27 +53,39 @@ class MainWindow(tk.Tk):
         self.info_comments.pack(fill=tk.X, padx=10)
         self.info_link.pack(fill=tk.X, padx=10, pady=10)
 
+        self.load_posts()  # Load initial posts
 
+        # Bind the Enter key to the on_button_click method
+        self.textField.bind('<Return>', self.on_enter_key)
+        # Ensure the text field has focus
+        self.textField.focus_set()
 
-
-        for p in db.DB().get_all():
+    def load_posts(self):
+        self.list.delete(0, tk.END)  # Clear the listbox
+        for p in self.database.get_all():
+            print(f"Loading post: {p['title']}")
             self.list.insert(tk.END, f"{p['title']}")
 
     def on_button_click(self):
-        # self.textField.insert(tk.END, 'Hello, world!\n')
+        print("Scraping started")
         self.button.config(state=tk.DISABLED, text='Scraping...')
+        self.list.delete(0, tk.END)  # Clear the listbox before inserting new items
         for p in self.scraper.get(self.textField.get()):
+            print(f"Scraped post: {p['title']}")
             self.list.insert(tk.END, f"{p['title']}")
         self.update_idletasks()
         self.button.config(state=tk.NORMAL, text='Scrape')
+        print("Scraping finished")
 
-    def on_list_select(self,event):
+    def on_enter_key(self, event):
+        print("Enter key pressed")
+        self.on_button_click()
+
+    def on_list_select(self, event):
         index = self.list.curselection()[0]
-        post = db.DB().get_all()[index]
-        print(post)
+        post = self.database.get_all()[index]
+        print(f"Selected post: {post['title']}")
         self.likes.config(text=post['score'])
         self.comments.config(text=post['number_comments'])
         self.link.config(text="Link", cursor="hand2", fg="blue")
-        self.link.bind("<Button-1>", lambda e:  webbrowser.open_new("https://www.reddit.com/" + post['url']))
-
-
+        self.link.bind("<Button-1>", lambda e: webbrowser.open_new("https://www.reddit.com/" + post['url']))
