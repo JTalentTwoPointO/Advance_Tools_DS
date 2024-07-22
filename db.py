@@ -1,5 +1,7 @@
 import networkx as nx
 from tinydb import TinyDB, Query
+from py2neo import Graph, Node
+
 
 class DB:
     def __init__(self):
@@ -9,7 +11,6 @@ class DB:
     def insert(self, data):
         self.posts.insert(data)
         self.graph.add_node(data['id'], label=data['title'])
-        # Add an edge (adjust according to our requirements)
         if 'related_id' in data:
             self.graph.add_edge(data['id'], data['related_id'])
 
@@ -35,3 +36,11 @@ class DB:
     def clear(self):
         self.posts.truncate()
         self.graph.clear()
+
+    from py2neo import Graph
+
+    def save_to_neo4j(data):
+        graph = Graph("bolt://localhost:7687", auth=("neo4j", "Sisma123"))
+        for item in data:
+            node = Node("Data", **item)
+            graph.create(node)

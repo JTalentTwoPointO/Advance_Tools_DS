@@ -2,6 +2,9 @@ import tkinter as tk
 import webbrowser
 import scrape
 import db
+import pandas as pd
+import os
+import graph_analysis
 
 class MainWindow(tk.Tk):
     def __init__(self, database):
@@ -10,11 +13,17 @@ class MainWindow(tk.Tk):
         self.database = database
 
         tk.Tk.__init__(self)
-        self.title('Reddit Web Scraper')
-        self.geometry('800x500')
+        self.title('Reddit Web Scraper & Graph Analyzer')
+        self.geometry('800x600')
         self.frame = tk.Frame(self)
-        self.icon = tk.PhotoImage(file='public/icon.png')
-        self.iconphoto(False, self.icon)
+
+        icon_path = 'public/icon.png'
+        if os.path.exists(icon_path):
+            self.icon = tk.PhotoImage(file=icon_path)
+            self.iconphoto(False, self.icon)
+        else:
+            print(f"Icon file not found: {icon_path}")
+
         self.textField = tk.Entry(self.frame)
         self.label = tk.Label(self.frame, text="Reddit Search:")
         self.button = tk.Button(self.frame, text='Search', command=self.on_button_click)
@@ -53,6 +62,15 @@ class MainWindow(tk.Tk):
         self.info_comments.pack(fill=tk.X, padx=10)
         self.info_link.pack(fill=tk.X, padx=10, pady=10)
 
+        self.graph_buttons_frame = tk.Frame(self)
+        self.analyze_button = tk.Button(self.graph_buttons_frame, text='Analyze Graph', command=self.analyze_graph)
+        self.visualize_button = tk.Button(self.graph_buttons_frame, text='Visualize Graph',
+                                          command=self.visualize_graph)
+
+        self.analyze_button.pack(side=tk.LEFT, padx=5)
+        self.visualize_button.pack(side=tk.LEFT, padx=5)
+        self.graph_buttons_frame.pack(padx=10, pady=10)
+
         self.load_posts()  # Load initial posts
 
         # Bind the Enter key to the on_button_click method
@@ -64,7 +82,7 @@ class MainWindow(tk.Tk):
         self.list.delete(0, tk.END)  # Clear the listbox
         for p in self.database.get_all():
             print(f"Loading post: {p['title']}")
-            self.list.insert(tk.END, f"{p['title']}")
+            self.list.insert(tk.END, p['title'])
 
     def on_button_click(self):
         print("Scraping started")
@@ -89,3 +107,17 @@ class MainWindow(tk.Tk):
         self.comments.config(text=post['number_comments'])
         self.link.config(text="Link", cursor="hand2", fg="blue")
         self.link.bind("<Button-1>", lambda e: webbrowser.open_new("https://www.reddit.com/" + post['url']))
+
+    def analyze_graph(self):
+        print("Analyzing graph")
+        graph_analysis.analyze_graph()
+
+    def visualize_graph(self):
+        print("Visualizing graph")
+        graph_analysis.plot_networkx_graph(graph_analysis.G_nx, 'asoiaf_network_nx.png', "ASOIAF Network (NetworkX)")
+        graph_analysis.plot_networkx_graph(graph_analysis.G_florentine, 'florentine_families.png',
+                                           "Florentine Families Network")
+
+    def display_data(data):
+        df = pd.DataFrame(data)
+        print(df)
