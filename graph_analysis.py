@@ -1,3 +1,4 @@
+import os
 import networkx as nx
 import matplotlib.pyplot as plt
 import igraph as ig
@@ -13,16 +14,26 @@ def plot_networkx_graph(graph, filename, title):
     plt.figure(figsize=(8, 6))
     nx.draw(graph, with_labels=True, node_color='skyblue', node_size=700, edge_color='gray')
     plt.title(title)
-    plt.savefig(filename)
-    plt.show()
+    plt.savefig(os.path.join('graphs', filename))
+    plt.close()
 
+def plot_centrality_measures(measure, title, filename):
+    plt.figure(figsize=(10, 6))
+    nodes = list(measure.keys())
+    values = list(measure.values())
+    plt.bar(nodes, values, color='skyblue')
+    plt.xlabel('Nodes')
+    plt.ylabel('Centrality Value')
+    plt.title(title)
+    plt.legend(['Centrality Measure'])
+    plt.savefig(os.path.join('graphs', filename))
+    plt.close()
 
 def plot_igraph_graph(graph, layout, filename):
     try:
-        ig.plot(graph, layout=layout, target=filename, vertex_size=20, vertex_label_size=10, vertex_color='skyblue')
+        ig.plot(graph, layout=layout, target=os.path.join('graphs', filename), vertex_size=20, vertex_label_size=10, vertex_color='skyblue')
     except ImportError as e:
         print(f"Error plotting igraph: {e}")
-
 
 def analyze_graph():
     global G_nx, G_florentine
@@ -49,24 +60,30 @@ def analyze_graph():
 
     pagerank_nx = nx.pagerank(G_nx)
     print("PageRank (NetworkX):\n", pagerank_nx)
+    plot_centrality_measures(pagerank_nx, "PageRank (NetworkX)", "pagerank_nx.png")
 
     betweenness_nx = nx.betweenness_centrality(G_nx)
     print("Betweenness Centrality (NetworkX):\n", betweenness_nx)
+    plot_centrality_measures(betweenness_nx, "Betweenness Centrality (NetworkX)", "betweenness_nx.png")
 
     closeness_nx = nx.closeness_centrality(G_nx)
     print("Closeness Centrality (NetworkX):\n", closeness_nx)
+    plot_centrality_measures(closeness_nx, "Closeness Centrality (NetworkX)", "closeness_nx.png")
 
     degree_nx = nx.degree_centrality(G_nx)
     print("Degree Centrality (NetworkX):\n", degree_nx)
+    plot_centrality_measures(degree_nx, "Degree Centrality (NetworkX)", "degree_nx.png")
 
     pagerank_ig = G_ig.pagerank()
     print("PageRank (igraph):\n", pagerank_ig)
+    plot_centrality_measures(dict(enumerate(pagerank_ig)), "PageRank (igraph)", "pagerank_ig.png")
 
     G_florentine = nx.florentine_families_graph()
     plot_networkx_graph(G_florentine, 'florentine_families.png', "Florentine Families Network")
 
     pagerank_florentine = nx.pagerank(G_florentine)
     print("Florentine Families PageRank:\n", pagerank_florentine)
+    plot_centrality_measures(pagerank_florentine, "Florentine Families PageRank", "pagerank_florentine.png")
 
     graph = Graph("bolt://localhost:7687", auth=("neo4j", "Sisma123"))
     graph.delete_all()
@@ -80,7 +97,6 @@ def analyze_graph():
         CREATE (a)-[:INTERACTS {weight: $weight}]->(b)
         """, source=row['Source'], target=row['Target'], weight=row['weight'])
 
-    # Perform PageRank in Neo4j
     pagerank_query = """
         CALL gds.pageRank.stream('characterGraph', {
         dampingFactor: 0.85,
@@ -117,3 +133,4 @@ def analyze_graph():
 
     pagerank_neo4j = nx.pagerank(G_neo4j)
     print("PageRank (Neo4j):\n", pagerank_neo4j)
+    plot_centrality_measures(pagerank_neo4j, "PageRank (Neo4j)", "pagerank_neo4j.png")

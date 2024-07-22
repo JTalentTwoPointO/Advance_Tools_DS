@@ -5,6 +5,7 @@ import db
 import pandas as pd
 import os
 import graph_analysis
+from PIL import Image, ImageTk
 
 class MainWindow(tk.Tk):
     def __init__(self, database):
@@ -113,10 +114,40 @@ class MainWindow(tk.Tk):
         graph_analysis.analyze_graph()
 
     def visualize_graph(self):
-        print("Visualizing graph")
-        graph_analysis.plot_networkx_graph(graph_analysis.G_nx, 'asoiaf_network_nx.png', "ASOIAF Network (NetworkX)")
-        graph_analysis.plot_networkx_graph(graph_analysis.G_florentine, 'florentine_families.png',
-                                           "Florentine Families Network")
+        print("Visualizing graphs")
+        graph_folder = 'graphs'
+        if not os.path.exists(graph_folder):
+            print(f"Graph folder not found: {graph_folder}")
+            return
+
+        new_window = tk.Toplevel(self)
+        new_window.title("Graph Visualizations")
+        new_window.geometry('800x600')
+
+        canvas = tk.Canvas(new_window)
+        scroll_y = tk.Scrollbar(new_window, orient="vertical", command=canvas.yview)
+        scroll_x = tk.Scrollbar(new_window, orient="horizontal", command=canvas.xview)
+
+        frame = tk.Frame(canvas)
+
+        for image_file in os.listdir(graph_folder):
+            if image_file.endswith('.png'):
+                img_path = os.path.join(graph_folder, image_file)
+                img = Image.open(img_path)
+                img = img.resize((400, 300), Image.Resampling.LANCZOS)
+                img_tk = ImageTk.PhotoImage(img)
+                label = tk.Label(frame, image=img_tk)
+                label.image = img_tk
+                label.pack(padx=5, pady=5)
+
+        frame.update_idletasks()
+        canvas.create_window(0, 0, anchor='nw', window=frame)
+        canvas.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox('all'), yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+
+        canvas.pack(fill='both', expand=True, side='left')
+        scroll_y.pack(fill='y', side='right')
+        scroll_x.pack(fill='x', side='bottom')
 
     def display_data(data):
         df = pd.DataFrame(data)
