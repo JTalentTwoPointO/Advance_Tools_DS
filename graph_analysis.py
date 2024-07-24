@@ -38,8 +38,8 @@ def plot_igraph_graph(graph, layout, filename):
 def analyze_graph():
     global G_nx, G_florentine
 
-    edges = pd.read_csv('asoiaf-book1-edges.csv')
-    nodes = pd.read_csv('asoiaf-book1-nodes.csv')
+    edges = pd.read_csv('data/asoiaf-book1-edges.csv')
+    nodes = pd.read_csv('data/asoiaf-book1-nodes.csv')
 
     nodes['Id'] = nodes['Id'].astype('category').cat.codes
     edges['Source'] = edges['Source'].astype('category').cat.codes
